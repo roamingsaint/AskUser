@@ -3,7 +3,7 @@ from typing import Literal
 from colorfulPyPrint.py_color import print_blue, input_white
 from tabulate import tabulate
 
-from logic import *
+from .logic import *
 from string_list import str_enumerate
 
 VALIDATOR_FUNC = {

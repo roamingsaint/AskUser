@@ -1,7 +1,7 @@
 [project]
 name = "askuser"
 version = "0.1.0"
-description = "Smart CLI input prompts with validation and autocomplete"
+description = "Smart and robust CLI input: validated prompts, menu-driven selections, default value support, and smart autocompletion."
 readme = "README.md"
 license = {text = "MIT"}
 authors = [{name = "Kanad Rishiraj (RoamingSaint)", email = "roamingsaint27@gmail.com"}]
