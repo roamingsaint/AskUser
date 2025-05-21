@@ -1,0 +1,29 @@
+# Bytecode and cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+env/
+.venv.bak/
+*.env
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# PyInstaller
+*.spec
+
+# macOS
+.DS_Store
+
+# VSCode and JetBrains IDEs
+.vscode/
+.idea/
+
+# PyPI credentials
+.pypirc
