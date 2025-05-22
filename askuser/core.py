@@ -285,13 +285,14 @@ def validate_user_option_enumerated(a_dict: dict, msg: str = 'Option:', start: i
         return d_id, d_value
 
 
-def choose_from_db(db_result, input_msg=None, table_desc=None, xq=False):
+def choose_from_db(db_result, input_msg=None, primary_key='id', table_desc=None, xq=False):
     """
     Displays a list of database results in a tabular format and allows the user to select an entry by ID.
 
     Args:
         db_result (list of dict): The result set from the database query, where each dict represents a row.
         input_msg (str): Input message to be displayed for user (default - Choose appropriate id: )
+        primary_key (str): Default: 'id'. Primary key of the table - becomes key to choose.
         table_desc (str): The description of the query
         xq (bool): Gives option of '(xq: quit)'. Defaults to False
 
@@ -301,7 +302,7 @@ def choose_from_db(db_result, input_msg=None, table_desc=None, xq=False):
             - chosen_row (dict): The full row data corresponding to the selected ID.
     """
     # Map IDs to their respective rows for quick lookup
-    ids = {str(r['id']): r for r in db_result}
+    ids = {str(r[primary_key]): r for r in db_result}
 
     # Display the data in a tabular format for user review
     if table_desc:
