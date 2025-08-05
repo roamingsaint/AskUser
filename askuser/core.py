@@ -1,6 +1,6 @@
 from typing import Literal
 
-from colorfulPyPrint.py_color import print_blue, input_white
+from colorfulPyPrint.py_color import print_blue, input_custom
 from tabulate import tabulate
 
 from .logic import *
@@ -99,7 +99,7 @@ def validate_input(input_msg: str,
     if default is not None and "default" not in input_msg.lower():
         additional_hint += f"{'' if input_msg[-1] == ' ' else ' '}(default: {default}) "
 
-    user_input = input_white(f"{input_msg}{additional_hint}")
+    user_input = input_custom(f"{input_msg}{additional_hint}")
 
     # If default is set and user_input is blank
     if len(user_input) == 0 and default is not None:
