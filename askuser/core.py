@@ -1,10 +1,10 @@
-from typing import Literal
+from typing import Any, Dict, Union, Hashable, Literal
 
 from colorfulPyPrint.py_color import print_blue, input_custom
+from string_list import str_enumerate
 from tabulate import tabulate
 
 from .logic import *
-from string_list import str_enumerate
 
 VALIDATOR_FUNC = {
     'alpha': is_valid_alpha,
@@ -161,13 +161,14 @@ def pretty_menu(*args, **kwargs):
         print()
 
 
-def validate_user_option(input_msg='Option:', *args, **kwargs):
+def validate_user_option(input_msg: str = 'Option:', *args: str, **kwargs: Any) -> Union[str, int, Hashable]:
     """
-        Displays menu for user, and returns validated user's option
-        (automatically adds q: quit as an option if not present,
-         pass q=False to remove q:quit option altogether)
+    Displays menu for user, and returns validated user's option (the key).
+    - For **kwargs menus**: returns the ORIGINAL key type (e.g., int keys stay ints).
+    - For *args menus*: keys are enumerated strings ("0","1",...), same as before.
+    - Auto-adds q: quit unless q=False is passed.
 
-        For example:
+    For example:
         1: Create bundle    2: Add sections     3: Add movies
         o: Order movies     dm: Order movies    db: Delete bundle
         q: quit
@@ -178,31 +179,40 @@ def validate_user_option(input_msg='Option:', *args, **kwargs):
         :param args: [operation_descriptions]
         :param kwargs: {key: operation_description}
         :return: user selection (key for **kwargs, number for *args)
-        """
-    ops_dict = {}
+    """
+    ops_dict: Dict[str, str] = {}
+    # Reverse map to preserve original key types when kwargs are used
+    orig_key_by_menu_key: Dict[str, Hashable] = {}
 
+    # Positional args → "0","1",...  (unchanged)
     for i, op in enumerate(args):
-        ops_dict[str(i)] = op
-    for i, op in kwargs.items():
-        ops_dict[str(i).lower()] = op
+        menu_key = str(i)
+        ops_dict[menu_key] = str(op)
 
+    # Keyword args → preserve original key type via reverse map
+    for k, v in kwargs.items():
+        # Keep menu key as string for display / validation, but remember the original key
+        menu_key = str(k)
+        ops_dict[menu_key] = str(v)
+        orig_key_by_menu_key[menu_key] = k
+
+    # Handle q option like before
     if 'q' not in ops_dict:
         ops_dict['q'] = 'quit'
-    elif ops_dict['q'] is False:  # checks if q=False is passed and remove q:quit option
+    elif ops_dict['q'] is False:  # q=False suppresses quit
         ops_dict.pop('q')
 
+    # Pretty print (same layout logic as your existing function)
     items_per_col = 3
-    longest_option = (max([len(str(k)) for k, v in ops_dict.items()]))
-    longest_desc = (max([len(str(v)) for k, v in ops_dict.items()]))
+    longest_option = (max(len(str(k)) for k in ops_dict)) if ops_dict else 1
+    longest_desc = (max(len(str(v)) for v in ops_dict.values())) if ops_dict else 1
     count = 0
     print()
     for i, op in ops_dict.items():
-        if len(ops_dict) > 5:  # Break into columns, to look prettier
-
+        if len(ops_dict) > 5:
             # Calculate items per column (max row length = 120 characters)
             max_item_len = longest_desc + len(': ') + longest_option + 5
-            items_per_col = int(120 / max_item_len)
-
+            items_per_col = max(1, int(120 / max_item_len))
             print_blue(i.rjust(longest_option), end="")
             print(f": {op}".ljust(longest_desc + 5 - len(i) + 1), end="")
             count += 1
@@ -211,15 +221,23 @@ def validate_user_option(input_msg='Option:', *args, **kwargs):
         else:
             print_blue(i, end="")
             print(f": {op}")
-    if count % items_per_col != 0:  # Add a line for the input_msg (else it will print in same line)
+    if count % items_per_col != 0:
         print()
-    return validate_input(input_msg=input_msg, validation_type='custom', expected_inputs=list(ops_dict.keys()))
+
+    # Validate input against the displayed menu keys
+    choice: str = validate_input(input_msg, "custom", expected_inputs=list(ops_dict.keys()))
+
+    # Map back to original key type when possible (kwargs)
+    if choice in orig_key_by_menu_key:
+        return orig_key_by_menu_key[choice]
+    return choice  # covers *args case (string indices) and 'q'
 
 
-def validate_user_option_value(input_msg='Option:', *args, **kwargs):
+def validate_user_option_value(input_msg: str = 'Option:', *args: Any, **kwargs: Any) -> Any:
     """
-    Takes a dictionary, and asks user options.
-    User selects the key, and this function returns the value
+    Like validate_user_option but returns the VALUE for the chosen key.
+    - For *args: we enumerate into "0","1",... and return the matching value.
+    - For **kwargs: we map the preserved original key to its value.
 
     For example:
     a_dict = {'a': 'ABC', 'd'': 'DEF', 'g': 'GHI', 'j': 'JKL', 'n': 'NOP', 'q': 'QRS'}
@@ -235,10 +253,9 @@ def validate_user_option_value(input_msg='Option:', *args, **kwargs):
     :param kwargs: {key: operation_description}
     :return: value based on key selected by user
     """
-
     # If list has been passed as arguments add them to kwargs
     if args:
-        arg_dict = str_enumerate(list(args))
+        arg_dict = str_enumerate(list(args))  # keys are strings "0","1",...
         if kwargs:
             arg_dict.update(kwargs)
         kwargs = arg_dict
