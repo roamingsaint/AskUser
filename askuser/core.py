@@ -285,6 +285,59 @@ def validate_user_option_enumerated(a_dict: dict, msg: str = 'Option:', start: i
         return d_id, d_value
 
 
+def validate_user_option_multi(input_msg='Option:', *args, **kwargs):
+    """
+    Multi-select version of validate_user_option.
+    Accepts *args and/or **kwargs like the single-select version.
+    Returns list of keys selected.
+    Auto-adds 'q: quit' unless q=False is passed in kwargs.
+    """
+    # Build the options dict exactly like validate_user_option
+    ops_dict = {}
+    for i, op in enumerate(args):
+        ops_dict[str(i)] = op
+    for i, op in kwargs.items():
+        ops_dict[str(i).lower()] = op
+
+    # Handle q option like the original
+    if 'q' not in ops_dict:
+        ops_dict['q'] = 'quit'
+    elif ops_dict['q'] is False:
+        ops_dict.pop('q')
+
+    selected = []
+    while ops_dict:
+        choice = validate_user_option(input_msg, **ops_dict)
+        if choice == 'q':
+            break
+        selected.append(choice)
+        ops_dict.pop(choice, None)  # remove so it’s not shown again
+
+    return selected
+
+
+def validate_user_option_value_multi(input_msg='Option:', *args, **kwargs):
+    """
+    Multi-select version of validate_user_option_value.
+    Returns list of values selected.
+    """
+    # Build menu dict like validate_user_option_value
+    if args:
+        arg_dict = str_enumerate(list(args))
+        if kwargs:
+            arg_dict.update(kwargs)
+        kwargs = arg_dict
+
+    if 'q' not in kwargs:
+        kwargs['q'] = False
+    else:
+        if kwargs['q']:
+            kwargs['xq'], kwargs['q'] = kwargs['q'], False
+
+    keys = validate_user_option_multi(input_msg, **kwargs)
+    return [kwargs[k] for k in keys]
+
+
 def choose_from_db(db_result, input_msg=None, primary_key='id', table_desc=None, xq=False):
     """
     Displays a list of database results in a tabular format and allows the user to select an entry by ID.

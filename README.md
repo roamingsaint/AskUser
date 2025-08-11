@@ -14,17 +14,19 @@ pip install askuser
 
 ## 📖 API Overview
 
-| Function / Class                              | What It Does                                                                                                                           |
-|-----------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
-| `validate_input(...)`                         | Prompt for free-form input, validate type/pattern, show hints (min/max/default) and retry until valid                                  |
-| `pretty_menu(*args, **kwargs)`                | Print a formatted menu of positional (`0:`) and keyword (`x:`) options                                                                 |
-| `validate_user_option(...)`                   | Show a menu, auto-add `q: quit` (unless `q=False`), prompt user, and return the selected **key**                                       |
-| `validate_user_option_value(...)`             | Like `validate_user_option`, but maps the chosen **key** to its **value**                                                               |
-| `validate_user_option_enumerated(dict,...)`   | Enumerate a `dict` into numbered options, add `q: quit`, and return `(key, value)`                                                      |
-| `choose_from_db(list_of_dicts,...)`           | Tabulate DB rows, prompt for an **existing** `id`, optionally accept `xq: quit`, and return `(id, row_dict)`                           |
-| `choose_dict_from_list_of_dicts(list, field)` | Display each item’s `field` as a menu, return the selected **dict**                                                                     |
-| `yes(prompt, default=None)`                   | Shorthand for `validate_input(prompt, "yes_no", default) == "y"` → returns **bool**                                                     |
-| `SpeechCompleter`                             | *(internal)* a `prompt_toolkit` completer that finds substring matches in suggestions                                                   |
+| Function / Class                                | What It Does                                                                                                                           |
+|-------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| `validate_input(...)`                           | Prompt for free-form input, validate type/pattern, show hints (min/max/default) and retry until valid                                  |
+| `pretty_menu(*args, **kwargs)`                  | Print a formatted menu of positional (`0:`) and keyword (`x:`) options                                                                 |
+| `validate_user_option(...)`                     | Show a menu, auto-add `q: quit` (unless `q=False`), prompt user, and return the selected **key**                                       |
+| `validate_user_option_value(...)`               | Like `validate_user_option`, but maps the chosen **key** to its **value**                                                               |
+| `validate_user_option_enumerated(dict,...)`     | Enumerate a `dict` into numbered options, add `q: quit`, and return `(key, value)`                                                      |
+| `validate_user_option_multi(...)`               | Multi-select version of `validate_user_option`, returning **keys** in selection order                                                   |
+| `validate_user_option_value_multi(...)`         | Multi-select version of `validate_user_option_value`, returning **values** in selection order                                           |
+| `choose_from_db(list_of_dicts,...)`             | Tabulate DB rows, prompt for an **existing** `id`, optionally accept `xq: quit`, and return `(id, row_dict)`                           |
+| `choose_dict_from_list_of_dicts(list, field)`   | Display each item’s `field` as a menu, return the selected **dict**                                                                     |
+| `yes(prompt, default=None)`                     | Shorthand for `validate_input(prompt, "yes_no", default) == "y"` → returns **bool**                                                     |
+| `SubstringCompleter`                            | *(internal)* a `prompt_toolkit` completer that finds substring matches in suggestions                                                   |
 | `user_prompt(prompt, items, return_value=False)` | Prompt with autocomplete over a list/dict of `items`; if `return_value=True` (and `items` is a dict), returns the **value** instead.   |
 
 ---
@@ -134,6 +136,50 @@ validate_user_option_value(
 ```python
 genre = validate_user_option_value(a="Action", c="Comedy", d="Drama")
 # 'c' → "Comedy"
+```
+
+---
+
+### `validate_user_option_multi(...)`
+
+```python
+validate_user_option_multi(
+    input_msg: str = "Option:",
+    *args,
+    **kwargs: Any  # key -> label
+) -> List[Any]
+```
+
+- Multi-select version of `validate_user_option`.
+- Auto-adds `q: quit` unless `q=False`.
+- Removes already-picked options from the menu.
+- Returns a list of **keys** in the order they were picked.
+
+```python
+STATUS_DICT = {0:"new", 1:"active", 7:"we rejected"}
+picked = validate_user_option_multi("Select statuses:", **STATUS_DICT)
+# → [1, 7]
+```
+
+---
+
+### `validate_user_option_value_multi(...)`
+
+```python
+validate_user_option_value_multi(
+    input_msg: str = "Option:",
+    *args,
+    **kwargs: Any  # key -> value
+) -> List[Any]
+```
+
+- Multi-select version of `validate_user_option_value`.
+- Auto-adds `q: quit` unless `q=False`.
+- Returns a list of **values** in the order they were picked.
+
+```python
+genres = validate_user_option_value_multi("Pick genres:", a="Action", c="Comedy", d="Drama")
+# User picks: c, a → returns ['Comedy', 'Action']
 ```
 
 ---
