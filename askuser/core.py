@@ -30,12 +30,11 @@ VALIDATOR_FUNC = {
 
 
 def validate_input(input_msg: str,
-                   validation_type: Literal['custom', 'required', 'not_in', 'none_if_blank', 'yes_no',
-                                            'int', 'float', 'alpha', 'alphanum', 'custom_chars', 'regex',
-                                            'date', 'future_date', 'time',
-                                            'url', 'ms_url', 'slug', 'email', 'phone',
-                                            'currency', 'country', 'language',
-                                            'movie_ids', 'ss_video_ids', 'bundle_ids'],
+                   validation_type: Literal[
+                       'custom', 'required', 'not_in', 'none_if_blank', 'yes_no',
+                       'int', 'float', 'alpha', 'alphanum', 'custom_chars', 'regex',
+                       'date', 'future_date', 'time',
+                       'url', 'slug', 'email', 'phone', 'language'],
                    expected_inputs: list = None,
                    not_in: list = None,
                    maximum=None, minimum=None,
@@ -60,14 +59,8 @@ def validate_input(input_msg: str,
      - future_date: Validate a date that is in the future
      - time: Validate user_input is in time format
      - url: Validate that user_input is a valid url
-     - ms_url: Validate that user_input is a valid url belonging to MovieSaints domains
      - email: Validate the user input is an email address
-     - currency: Validate the currency code
-     - country: Validate that the user_input is a valid country
      - language: Validate the user_input is a valid language
-     - movie_ids: Validate the user input is an id in the movies table
-     - ss_video_ids: Validate the user input is an id in the ss_videos table
-     - bundle_ids: Validate the user input is an id in the bundle table
     
     :param input_msg: str: Display a message to the user
     :param validation_type: Type of validation to be performed on user input
@@ -81,25 +74,29 @@ def validate_input(input_msg: str,
     :param default: Set a default value for the user_input (if user doesn't enter anything)
     :return: The user input if it is valid, or throw an appropriate error message and ask for user_input again
     """
-    additional_hint = ""
-    if validation_type == 'yes_no' and "(y/n)" not in input_msg.lower():
-        additional_hint += " (y/n): "
-    elif validation_type == 'none_if_blank' and "(optional)" not in input_msg.lower():
-        additional_hint += " (optional): "
-    elif validation_type == 'time' and "(hh:mm:ss)" not in input_msg.lower():
-        additional_hint += " (hh:mm:ss): "
+    hints = []
 
-    # Show max/min
-    if maximum is not None and "max" not in input_msg.lower():
-        additional_hint += f"{'' if input_msg[-1] == ' ' else ' '}(max: {maximum}) "
-    if minimum is not None and "max" not in input_msg.lower():
-        additional_hint += f"{'' if input_msg[-1] == ' ' else ' '}(min: {minimum}) "
+    if validation_type == 'yes_no' and '(y/n)' not in input_msg.lower():
+        hints.append('(y/n):')
+    elif validation_type == 'none_if_blank' and '(optional)' not in input_msg.lower():
+        hints.append('(optional):')
+    elif validation_type == 'time' and '(hh:mm:ss)' not in input_msg.lower():
+        hints.append('(hh:mm:ss):')
 
-    # Show default
-    if default is not None and "default" not in input_msg.lower():
-        additional_hint += f"{'' if input_msg[-1] == ' ' else ' '}(default: {default}) "
+    if maximum is not None and 'max' not in input_msg.lower():
+        hints.append(f'(max: {maximum})')
+    if minimum is not None and 'min' not in input_msg.lower():
+        hints.append(f'(min: {minimum})')
+    if default is not None and 'default' not in input_msg.lower():
+        hints.append(f'(default: {default})')
 
-    user_input = input_custom(f"{input_msg}{additional_hint}")
+    suffix = ''
+    if hints:
+        # Only add a space if input_msg is non-empty and doesn't already end with one
+        needs_space = bool(input_msg) and not input_msg.endswith(' ')
+        suffix = (' ' if needs_space else '') + ' '.join(hints) + ' '
+
+    user_input = input_custom(f"{input_msg}{suffix}")
 
     # If default is set and user_input is blank
     if len(user_input) == 0 and default is not None:
@@ -122,8 +119,17 @@ def validate_input(input_msg: str,
             return VALIDATOR_FUNC[validation_type.lower()](user_input)
     except ValueError:
         print()
-        return validate_input(input_msg, validation_type, expected_inputs, not_in,
-                              allowed_chars, allowed_regex, default)
+        return validate_input(
+            input_msg=input_msg,
+            validation_type=validation_type,
+            expected_inputs=expected_inputs,
+            not_in=not_in,
+            maximum=maximum,
+            minimum=minimum,
+            allowed_chars=allowed_chars,
+            allowed_regex=allowed_regex,
+            default=default,
+        )
 
 
 def pretty_menu(*args, **kwargs):
@@ -141,14 +147,18 @@ def pretty_menu(*args, **kwargs):
     for i, op in enumerate(args):
         ops_dict[str(i)] = op
     for i, op in kwargs.items():
-        ops_dict[str(i).lower()] = op
+        ops_dict[str(i)] = op
 
-    longest_option = (max([len(str(k)) for k, v in ops_dict.items()]))
-    longest_desc = (max([len(str(v)) for k, v in ops_dict.items()]))
+    if not ops_dict:
+        print()
+        return
+
+    longest_option = max(len(str(k)) for k in ops_dict)
+    longest_desc = max(len(str(v)) for v in ops_dict.values())
     count = 0
     print()
     for i, op in ops_dict.items():
-        if len(ops_dict) > 5:  # Break into columns, to look prettier
+        if len(ops_dict) > 5:
             print_blue(i.rjust(longest_option), end="")
             print(f": {op}".ljust(longest_desc + 5), end="")
             count += 1
@@ -161,7 +171,7 @@ def pretty_menu(*args, **kwargs):
         print()
 
 
-def validate_user_option(input_msg: str = 'Option:', *args: str, **kwargs: Any) -> Union[str, int, Hashable]:
+def validate_user_option(input_msg: str = 'Option:', *args: Any, **kwargs: Any) -> Union[str, int, Hashable]:
     """
     Displays menu for user, and returns validated user's option (the key).
     - For **kwargs menus**: returns the ORIGINAL key type (e.g., int keys stay ints).
@@ -240,7 +250,7 @@ def validate_user_option_value(input_msg: str = 'Option:', *args: Any, **kwargs:
     - For **kwargs: we map the preserved original key to its value.
 
     For example:
-    a_dict = {'a': 'ABC', 'd'': 'DEF', 'g': 'GHI', 'j': 'JKL', 'n': 'NOP', 'q': 'QRS'}
+    a_dict = {'a': 'ABC', 'd': 'DEF', 'g': 'GHI', 'j': 'JKL', 'n': 'NOP', 'q': 'QRS'}
     start = 1
     will result in
         a: ABC    d: DEF    g: GHI
@@ -298,59 +308,100 @@ def validate_user_option_enumerated(a_dict: dict, msg: str = 'Option:', start: i
     if index == 'q':
         return 'q', None
     else:
-        d_id, d_value = d_enumerated[int(index) - start]
+        d_id, d_value = d_enumerated[int(index)]
         return d_id, d_value
 
 
-def validate_user_option_multi(input_msg='Option:', *args, **kwargs):
+def validate_user_option_multi(input_msg='Option:', *args, **kwargs) -> list[Any]:
     """
     Multi-select version of validate_user_option.
-    Accepts *args and/or **kwargs like the single-select version.
-    Returns list of keys selected.
-    Auto-adds 'q: quit' unless q=False is passed in kwargs.
-    """
-    # Build the options dict exactly like validate_user_option
-    ops_dict = {}
-    for i, op in enumerate(args):
-        ops_dict[str(i)] = op
-    for i, op in kwargs.items():
-        ops_dict[str(i).lower()] = op
 
-    # Handle q option like the original
-    if 'q' not in ops_dict:
-        ops_dict['q'] = 'quit'
-    elif ops_dict['q'] is False:
-        ops_dict.pop('q')
+    - Shows an explicit exit key: 'd: done' by default (no 'q').
+    - If caller already uses key 'd', exit becomes 'xd: done'; if 'xd' is taken, 'xd2', 'xd3', ...
+    - Returns list of keys in selection order.
+      * For **kwargs menus: returns ORIGINAL key types (e.g., int keys stay ints)
+      * For *args menus: returns enumerated string keys "0","1",...
+    - To disable exit entirely (force select-until-exhausted), pass d=False.
+    """
+    # Build menu display dict and reverse map for kwargs to preserve original key types
+    menu = {}
+    kw_reverse = {}  # menu_key(str) -> original key (could be int, str, etc.)
+
+    # Positional options → "0","1",...
+    for i, op in enumerate(args):
+        mk = str(i)
+        menu[mk] = str(op)
+
+    # Keyword options → remember original key types
+    # If d=False was passed, treat as "suppress exit" signal (remove it from options).
+    suppress_done = ('d' in kwargs and kwargs['d'] is False)
+    kw_items = {k: v for k, v in kwargs.items() if not (k == 'd' and kwargs['d'] is False)}
+
+    for k, v in kw_items.items():
+        mk = str(k)
+        menu[mk] = str(v)
+        kw_reverse[mk] = k  # preserve original type
+
+    # Decide exit key (d / xd / xd2 / ...)
+    exit_key = None
+    if not suppress_done:
+        candidate = 'd'
+        i = 0
+        existing_keys = set(menu.keys())
+        while candidate in existing_keys:
+            i += 1
+            candidate = 'xd' if i == 1 else f'xd{i}'
+        exit_key = candidate
+        menu[exit_key] = 'done'
 
     selected = []
-    while ops_dict:
-        choice = validate_user_option(input_msg, **ops_dict)
-        if choice == 'q':
+    while menu:
+        # Suppress 'q' in the underlying single-select to avoid showing/accepting it
+        choice = validate_user_option(input_msg, q=False, **menu)
+
+        # Exit when user picks the done key
+        if exit_key is not None and choice == exit_key:
             break
-        selected.append(choice)
-        ops_dict.pop(choice, None)  # remove so it’s not shown again
+
+        # Map back to original key type if this came from kwargs; otherwise keep the string key (args path)
+        selected.append(kw_reverse.get(choice, choice))
+
+        # Remove the picked option so it won't show again
+        menu.pop(choice, None)
+
+        # If the only remaining entry is the exit key, and user must continue, loop will allow picking done next
+        if exit_key is not None and len(menu) == 1 and exit_key in menu:
+            # continue to allow user to hit 'done' explicitly
+            pass
+
+        # If exit was suppressed, loop will end when all options are consumed
+        if not menu:
+            break
 
     return selected
 
 
-def validate_user_option_value_multi(input_msg='Option:', *args, **kwargs):
+def validate_user_option_value_multi(input_msg='Option:', *args, **kwargs) -> list[Union[str, int, Hashable]]:
     """
     Multi-select version of validate_user_option_value.
-    Returns list of values selected.
+
+    Behavior:
+    - Uses 'd: done' as the exit key (handled inside validate_user_option_multi). No 'q'.
+    - If caller passes d=False, exit is suppressed and the user must pick until options are exhausted.
+    - For **kwargs menus: original key types are preserved (e.g., int keys stay ints).
+    - For *args menus: options are enumerated as "0","1",... (strings), same as single-select.
+
+    Returns:
+        list: Values corresponding to the selections, in the order picked.
     """
-    # Build menu dict like validate_user_option_value
+    # Build menu dict like validate_user_option_value (enumerate *args into "0","1",...)
     if args:
         arg_dict = str_enumerate(list(args))
         if kwargs:
             arg_dict.update(kwargs)
         kwargs = arg_dict
 
-    if 'q' not in kwargs:
-        kwargs['q'] = False
-    else:
-        if kwargs['q']:
-            kwargs['xq'], kwargs['q'] = kwargs['q'], False
-
+    # Delegate to the key-returning multi; it will handle 'd'/'xd' exit and key-type preservation
     keys = validate_user_option_multi(input_msg, **kwargs)
     return [kwargs[k] for k in keys]
 
@@ -397,7 +448,7 @@ def choose_from_db(db_result, input_msg=None, primary_key='id', table_desc=None,
     return int(chosen_id), ids[chosen_id]
 
 
-def choose_dict_from_list_of_dicts(list_of_dicts: List[dict], key_to_choose: str) -> dict:
+def choose_dict_from_list_of_dicts(list_of_dicts: list[dict], key_to_choose: str) -> dict:
     """
     The choose_dict_from_list_of_dicts function takes a list of dictionaries and a key to choose from.
     It then creates two dictionaries: one with the keys being the chosen key, and values being the dictionary;

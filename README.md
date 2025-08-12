@@ -21,13 +21,15 @@ pip install askuser
 | `validate_user_option(...)`                     | Show a menu, auto-add `q: quit` (unless `q=False`), prompt user, and return the selected **key**                                       |
 | `validate_user_option_value(...)`               | Like `validate_user_option`, but maps the chosen **key** to its **value**                                                               |
 | `validate_user_option_enumerated(dict,...)`     | Enumerate a `dict` into numbered options, add `q: quit`, and return `(key, value)`                                                      |
-| `validate_user_option_multi(...)`               | Multi-select version of `validate_user_option`, returning **keys** in selection order                                                   |
-| `validate_user_option_value_multi(...)`         | Multi-select version of `validate_user_option_value`, returning **values** in selection order                                           |
+| `validate_user_option_multi(...)`               | **Multi-select** version of `validate_user_option`, returns **keys** in pick order; exit with `d: done` (or `xd`, `xd2`, …)            |
+| `validate_user_option_value_multi(...)`         | **Multi-select** version of `validate_user_option_value`, returns **values** in pick order; exit with `d: done`                         |
 | `choose_from_db(list_of_dicts,...)`             | Tabulate DB rows, prompt for an **existing** `id`, optionally accept `xq: quit`, and return `(id, row_dict)`                           |
 | `choose_dict_from_list_of_dicts(list, field)`   | Display each item’s `field` as a menu, return the selected **dict**                                                                     |
 | `yes(prompt, default=None)`                     | Shorthand for `validate_input(prompt, "yes_no", default) == "y"` → returns **bool**                                                     |
 | `SubstringCompleter`                            | *(internal)* a `prompt_toolkit` completer that finds substring matches in suggestions                                                   |
 | `user_prompt(prompt, items, return_value=False)` | Prompt with autocomplete over a list/dict of `items`; if `return_value=True` (and `items` is a dict), returns the **value** instead.   |
+
+> 🔎 **Key types:** When you pass options via `**kwargs`, selected **keys are returned in their original types** (e.g., `int` stays `int`). With positional `*args`, menu keys are enumerated strings: `'0'`, `'1'`, …
 
 ---
 
@@ -39,8 +41,7 @@ validate_input(
     validation_type: Literal[
       'custom','required','not_in','none_if_blank','yes_no',
       'int','float','alpha','alphanum','custom_chars','regex',
-      'date','future_date','time','url','ms_url','slug','email','phone',
-      'currency','country','language','movie_ids','ss_video_ids','bundle_ids'
+      'date','future_date','time','url','slug','email','phone','language'
     ],
     expected_inputs: list = None,
     not_in:        list = None,
@@ -61,7 +62,7 @@ validate_input(
   - `maximum`/`minimum` display `(max: …)` / `(min: …)`  
   - `default` displays `(default: …)`  
 - **Validation types**  
-  - **Built-in**: `int`, `float`, `alpha`, `alphanum`, `date`, `future_date`, `time`, `url`, `email`, `phone`, `slug`, etc.  
+  - **Built-in**: `int`, `float`, `alpha`, `alphanum`, `date`, `future_date`, `time`, `url`, `email`, `phone`, `slug`, `language`.  
   - **Custom**:  
     - `custom` with `expected_inputs=[…]`  
     - `not_in` with `not_in=[…]`  
@@ -93,6 +94,7 @@ Prints a menu—no prompt:
 pretty_menu("List", "Add", d="Delete", q="Quit")
 # 0: List    1: Add    d: Delete    q: Quit
 ```
+> Keys are **case-sensitive**. What you see is what you type.
 
 ---
 
@@ -101,13 +103,13 @@ pretty_menu("List", "Add", d="Delete", q="Quit")
 ```python
 validate_user_option(
     input_msg: str = "Option:",
-    *args: str,
-    **kwargs: str|bool  # pass q=False to suppress quit
-) -> str
+    *args: Any,
+    **kwargs: Any  # pass q=False to suppress quit
+) -> Any  # key (kwargs preserves original key types; args return '0','1',...)
 ```
 
 - **Auto-adds** `q: quit` unless `q=False`.  
-- Returns the chosen **key**.
+- Returns the chosen **key** (preserving original type for `**kwargs`).
 
 **Examples:**
 
@@ -131,7 +133,8 @@ validate_user_option_value(
 ) -> Any
 ```
 
-- Builds same menu, returns the **value**.
+- Builds same menu, returns the **value**.  
+- **No `q` by default** (legacy behavior).
 
 ```python
 genre = validate_user_option_value(a="Action", c="Comedy", d="Drama")
@@ -150,14 +153,14 @@ validate_user_option_multi(
 ) -> List[Any]
 ```
 
-- Multi-select version of `validate_user_option`.
-- Auto-adds `q: quit` unless `q=False`.
-- Removes already-picked options from the menu.
-- Returns a list of **keys** in the order they were picked.
+- **Multi-select** version of `validate_user_option`.  
+- Exit with **`d: done`** by default. If `d` is already used in your options, exit appears as **`xd`**, or **`xd2`**, **`xd3`**, …  
+- Pass **`d=False`** to disable exit and force “pick until exhausted.”  
+- Returns a list of **keys** in the order picked (kwargs preserve original key types).
 
 ```python
-STATUS_DICT = {0:"new", 1:"active", 7:"we rejected"}
-picked = validate_user_option_multi("Select statuses:", **STATUS_DICT)
+STATUS = {0:"new", 1:"active", 7:"we rejected"}
+picked = validate_user_option_multi("Select statuses:", **STATUS)
 # → [1, 7]
 ```
 
@@ -173,13 +176,13 @@ validate_user_option_value_multi(
 ) -> List[Any]
 ```
 
-- Multi-select version of `validate_user_option_value`.
-- Auto-adds `q: quit` unless `q=False`.
-- Returns a list of **values** in the order they were picked.
+- **Multi-select** version of `validate_user_option_value`.  
+- Exit with **`d: done`** (or `xd`, `xd2`, … if `d` is taken). Use **`d=False`** to disable exit.  
+- Returns a list of **values** in the order picked.
 
 ```python
-genres = validate_user_option_value_multi("Pick genres:", a="Action", c="Comedy", d="Drama")
-# User picks: c, a → returns ['Comedy', 'Action']
+vals = validate_user_option_value_multi("Pick genres", a="Action", c="Comedy", d="Drama")
+# user picks: c, a → ['Comedy', 'Action']
 ```
 
 ---
@@ -200,7 +203,7 @@ validate_user_option_enumerated(
 
 ```python
 movies = {101:"Inception", 202:"Memento"}
-mid, title = validate_user_option_enumerated(movies)
+mid, title = validate_user_option_enumerated(movies, start=1)
 ```
 
 ---
@@ -238,7 +241,7 @@ choose_dict_from_list_of_dicts(
 - Returns selected dict.
 
 ```python
-fruits = [{"name":"Apple"},{"name":"Banana"}]
+fruits = [{"name":"Apple","color":"red"},{"name":"Banana","color":"yellow"}]
 choice = choose_dict_from_list_of_dicts(fruits, "name")
 ```
 
@@ -276,7 +279,7 @@ code = user_prompt("Code: ", opts, return_value=True)
 | `date` / `future_date`   | `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS`            |
 | `time`                   | `HH:MM:SS`                                       |
 | `email`                  | Standard RFC email                               |
-| `phone`                  | Digits with optional `+`, strips spaces/dashes  |
+| `phone`                  | Digits with optional `+`, strips spaces/dashes   |
 | `url`                    | Hostname + optional path/query                   |
 | `slug`                   | `[a-z0-9-]` only, single delimiter               |
 | `custom`                 | Only values in `expected_inputs`                 |
@@ -284,7 +287,6 @@ code = user_prompt("Code: ", opts, return_value=True)
 | `custom_chars`           | Only chars in `allowed_chars`                    |
 | `regex`                  | Match your regex                                 |
 | `language`               | ISO-639 via `pycountry`                          |
-| `country`                | Recognizes common abbreviations for countries    |
 
 ---
 

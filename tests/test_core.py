@@ -27,8 +27,6 @@ def setup_input(monkeypatch, inputs):
     monkeypatch.setattr('askuser.core.print_blue', lambda *args, **kwargs: None, raising=False)
 
 
-# ---------- Original tests (kept) ----------
-
 def test_validate_input_int(monkeypatch):
     setup_input(monkeypatch, ['42'])
     assert validate_input('Enter number', 'int') == 42
@@ -77,7 +75,8 @@ def test_validate_user_option_value(monkeypatch):
 
 
 def test_validate_user_option_enumerated(monkeypatch):
-    setup_input(monkeypatch, ['2'])
+    # start=1 → indices are 1,2,...; pick "1" to get the first pair (10, 'Ten')
+    setup_input(monkeypatch, ['1'])
     key, val = validate_user_option_enumerated({10: 'Ten', 20: 'Twenty'}, start=1)
     assert (key, val) == (10, 'Ten')
 
@@ -104,52 +103,68 @@ def test_choose_dict_from_list_of_dicts(monkeypatch):
     assert chosen['color'] == 'yellow'
 
 
-# ---------- New multi-select tests ----------
+# ---------- multi-select tests ----------
 
 def test_validate_user_option_multi_with_args(monkeypatch):
-    # Select two items then quit
-    setup_input(monkeypatch, ['0', '2', 'q'])
+    # Select two items then done
+    setup_input(monkeypatch, ['0', '2', 'd'])
     keys = validate_user_option_multi("Pick", "Alpha", "Beta", "Gamma")
     assert keys == ['0', '2']  # menu keys from *args enumeration
 
 
 def test_validate_user_option_multi_with_kwargs(monkeypatch):
-    # Select two items by key then quit
-    setup_input(monkeypatch, ['a', 'c', 'q'])
+    # Select two items by key then done
+    setup_input(monkeypatch, ['a', 'c', 'd'])
     keys = validate_user_option_multi("Pick", a='Alpha', b='Beta', c='Gamma')
     assert keys == ['a', 'c']
 
 
 def test_validate_user_option_multi_mixed_inputs(monkeypatch):
-    # *args become 0,1; kwargs add named options; select 1 (args) then 'x' (kwargs) then q
-    setup_input(monkeypatch, ['1', 'x', 'q'])
+    # *args become 0,1; kwargs add named options; select 1 (args) then 'x' (kwargs) then done
+    setup_input(monkeypatch, ['1', 'x', 'd'])
     keys = validate_user_option_multi("Pick", "Alpha", "Beta", x="X-ray", y="Yankee")
     assert keys == ['1', 'x']
 
 
-def test_validate_user_option_multi_no_quit(monkeypatch):
-    # q disabled → user must pick everything (order may vary)
+def test_validate_user_option_multi_no_exit(monkeypatch):
+    # Exit disabled (d=False) → user must pick everything; order may vary
     setup_input(monkeypatch, ['a', 'b', 'c'])
-    keys = validate_user_option_multi("Pick (no quit)", q=False, a='Alpha', b='Beta', c='Gamma')
+    keys = validate_user_option_multi("Pick (no exit)", d=False, a='Alpha', b='Beta', c='Gamma')
     assert set(keys) == {'a', 'b', 'c'}
 
 
 def test_validate_user_option_value_multi_with_kwargs(monkeypatch):
-    # Select order b, a then quit → should return values in selection order
-    setup_input(monkeypatch, ['b', 'a', 'q'])
+    # Select order b, a then done → return values in selection order
+    setup_input(monkeypatch, ['b', 'a', 'd'])
     vals = validate_user_option_value_multi("Pick values", a='Alpha', b='Beta', c='Gamma')
     assert vals == ['Beta', 'Alpha']
 
 
 def test_validate_user_option_value_multi_with_args(monkeypatch):
     # *args path → returns selected values (by enumerated positions)
-    setup_input(monkeypatch, ['0', '2', 'q'])
+    setup_input(monkeypatch, ['0', '2', 'd'])
     vals = validate_user_option_value_multi("Pick values", "Red", "Green", "Blue")
     assert vals == ['Red', 'Blue']
 
 
-def test_validate_user_option_value_multi_quit_first(monkeypatch):
-    # Immediate quit → empty list
-    setup_input(monkeypatch, ['q'])
+def test_validate_user_option_value_multi_done_first(monkeypatch):
+    # Immediate done → empty list
+    setup_input(monkeypatch, ['d'])
     vals = validate_user_option_value_multi("Pick values", a='Alpha', b='Beta')
     assert vals == []
+
+
+# ---------- Exit-key collision tests for multi ----------
+
+def test_multi_exit_collision_with_d(monkeypatch):
+    # Caller already uses 'd' → exit should become 'xd'
+    setup_input(monkeypatch, ['a', 'xd'])
+    keys = validate_user_option_multi("Pick", d="DELETE", a="Alpha")
+    assert keys == ['a']
+
+
+def test_multi_exit_collision_with_d_and_xd(monkeypatch):
+    # Caller uses both 'd' and 'xd' → exit should become 'xd2'
+    setup_input(monkeypatch, ['a', 'xd2'])
+    keys = validate_user_option_multi("Pick", d="DELETE", xd="EXTRA", a="Alpha")
+    assert keys == ['a']
