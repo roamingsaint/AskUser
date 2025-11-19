@@ -1,4 +1,5 @@
 import re
+from decimal import Decimal, InvalidOperation
 from typing import List
 
 from colorfulPyPrint.py_color import print_error, print_exception, print_magenta, print_info
@@ -82,6 +83,34 @@ def is_valid_float(user_input: str, expected_inputs: List[float] = None,
     except Exception:
         print_error("Error: Float values only.")
         raise ValueError(f"{user_input} is not valid float")
+
+
+def is_valid_decimal(
+    user_input: str,
+    expected_inputs: List[Decimal] = None,
+    maximum: Decimal = None,
+    minimum: Decimal = None,
+) -> Decimal:
+    try:
+        value = Decimal(user_input)
+    except (InvalidOperation, ValueError):
+        print_error("Error: Decimal values only.")
+        raise ValueError(f"{user_input} is not valid decimal")
+
+    if expected_inputs is not None:
+        if value not in expected_inputs:
+            print_error(f"Error: expected {expected_inputs}")
+            raise ValueError(f"{user_input} is not in {expected_inputs}")
+
+    if maximum is not None and value > maximum:
+        print_error(f"Error: {user_input} is greater than {maximum}")
+        raise ValueError(f"{user_input} has to be less than {maximum}")
+
+    if minimum is not None and value < minimum:
+        print_error(f"Error: {user_input} is less than {minimum}")
+        raise ValueError(f"{user_input} has to be more than {minimum}")
+
+    return value
 
 
 def is_valid_alpha(user_input: str) -> str:

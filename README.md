@@ -272,21 +272,21 @@ code = user_prompt("Code: ", opts, return_value=True)
 
 ## 🔍 All Validation Types
 
-| Type                     | Description                                      |
-|--------------------------|--------------------------------------------------|
-| `int` / `float`          | Numeric with optional `minimum` / `maximum`      |
-| `alpha` / `alphanum`     | Only letters / letters+digits                    |
-| `date` / `future_date`   | `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS`            |
-| `time`                   | `HH:MM:SS`                                       |
-| `email`                  | Standard RFC email                               |
-| `phone`                  | Digits with optional `+`, strips spaces/dashes   |
-| `url`                    | Hostname + optional path/query                   |
-| `slug`                   | `[a-z0-9-]` only, single delimiter               |
-| `custom`                 | Only values in `expected_inputs`                 |
-| `not_in`                 | Reject values in `not_in`                        |
-| `custom_chars`           | Only chars in `allowed_chars`                    |
-| `regex`                  | Match your regex                                 |
-| `language`               | ISO-639 via `pycountry`                          |
+| Type                        | Description                                      |
+|-----------------------------|--------------------------------------------------|
+| `int` / `float` / `decimal` | Numeric with optional `minimum` / `maximum`      |
+| `alpha` / `alphanum`        | Only letters / letters+digits                    |
+| `date` / `future_date`      | `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS`            |
+| `time`                      | `HH:MM:SS`                                       |
+| `email`                     | Standard RFC email                               |
+| `phone`                     | Digits with optional `+`, strips spaces/dashes   |
+| `url`                       | Hostname + optional path/query                   |
+| `slug`                      | `[a-z0-9-]` only, single delimiter               |
+| `custom`                    | Only values in `expected_inputs`                 |
+| `not_in`                    | Reject values in `not_in`                        |
+| `custom_chars`              | Only chars in `allowed_chars`                    |
+| `regex`                     | Match your regex                                 |
+| `language`                  | ISO-639 via `pycountry`                          |
 
 ---
 

@@ -12,6 +12,7 @@ VALIDATOR_FUNC = {
     'custom_chars': is_valid_char,
     'custom': is_valid_custom,
     'date': is_valid_date,
+    'decimal': is_valid_decimal,
     'email': is_valid_email,
     'float': is_valid_float,
     'future_date': is_valid_date_future,
@@ -32,7 +33,7 @@ VALIDATOR_FUNC = {
 def validate_input(input_msg: str,
                    validation_type: Literal[
                        'custom', 'required', 'not_in', 'none_if_blank', 'yes_no',
-                       'int', 'float', 'alpha', 'alphanum', 'custom_chars', 'regex',
+                       'int', 'float', 'decimal', 'alpha', 'alphanum', 'custom_chars', 'regex',
                        'date', 'future_date', 'time',
                        'url', 'slug', 'email', 'phone', 'language'],
                    expected_inputs: list = None,
@@ -106,7 +107,7 @@ def validate_input(input_msg: str,
     try:
         if validation_type.lower() in ['custom'] and expected_inputs is not None:
             return VALIDATOR_FUNC[validation_type.lower()](user_input, expected_inputs)
-        elif validation_type.lower() in ['int', 'float'] and (expected_inputs or maximum or minimum):
+        elif validation_type.lower() in ['int', 'float', 'decimal'] and (expected_inputs or maximum or minimum):
             return VALIDATOR_FUNC[validation_type.lower()](user_input, expected_inputs, maximum, minimum)
         elif validation_type.lower() in ['not_in'] and not_in is not None:
             return VALIDATOR_FUNC['not_in'](user_input, not_in)

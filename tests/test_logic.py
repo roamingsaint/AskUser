@@ -1,9 +1,13 @@
+from decimal import Decimal
+
 import pytest
+
 from askuser.logic import (
     is_valid_int, is_valid_float, is_valid_alpha, is_valid_alphanum,
     is_valid_regex, is_valid_char, is_valid_custom, is_not_in,
     is_yes_no, none_if_blank, is_not_blank,
-    is_valid_slug, check_country_abbrev
+    is_valid_slug, check_country_abbrev,
+    is_valid_decimal,
 )
 
 
@@ -17,6 +21,33 @@ def test_is_valid_float():
     assert is_valid_float('3.14') == 3.14
     with pytest.raises(ValueError):
         is_valid_float('pi')
+
+
+def test_is_valid_decimal_basic():
+    # Happy path and invalid decimal
+    assert is_valid_decimal('3.14') == Decimal('3.14')
+    with pytest.raises(ValueError):
+        is_valid_decimal('pi')
+
+
+def test_is_valid_decimal_expected_inputs():
+    allowed = [Decimal('1.0'), Decimal('2.5')]
+    assert is_valid_decimal('1.0', expected_inputs=allowed) == Decimal('1.0')
+    with pytest.raises(ValueError):
+        is_valid_decimal('3.0', expected_inputs=allowed)
+
+
+def test_is_valid_decimal_minimum_maximum():
+    # in range
+    assert is_valid_decimal('5.0', minimum=Decimal('1'), maximum=Decimal('10')) == Decimal('5.0')
+
+    # below minimum
+    with pytest.raises(ValueError):
+        is_valid_decimal('0.5', minimum=Decimal('1'))
+
+    # above maximum
+    with pytest.raises(ValueError):
+        is_valid_decimal('10.5', maximum=Decimal('10'))
 
 
 def test_is_valid_alpha():
