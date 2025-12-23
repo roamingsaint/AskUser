@@ -12,6 +12,8 @@ class SubstringCompleter(Completer):
     def get_completions(self, document, complete_event):
         text_before_cursor = document.text_before_cursor
         words = text_before_cursor.split()
+        if not words:
+            return
         if len(words[-1]) >= self.min_chars:
             last_word = words[-1].lower()
             for item in self.items_list:

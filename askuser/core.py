@@ -4,7 +4,35 @@ from colorfulPyPrint.py_color import print_blue, input_custom
 from string_list import str_enumerate
 from tabulate import tabulate
 
-from .logic import *
+from .logic import (
+    is_valid_alpha,
+    is_valid_alphanum,
+    is_valid_char,
+    is_valid_custom,
+    is_valid_date,
+    is_valid_decimal,
+    is_valid_email,
+    is_valid_float,
+    is_valid_date_future,
+    is_valid_int,
+    is_valid_language,
+    none_if_blank,
+    is_not_in,
+    is_valid_phone,
+    is_valid_regex,
+    is_not_blank,
+    is_valid_slug,
+    is_valid_time,
+    is_url,
+    is_yes_no,
+)
+
+
+BuiltinValidationType = Literal[
+                       'custom', 'required', 'not_in', 'none_if_blank', 'yes_no',
+                       'int', 'float', 'decimal', 'alpha', 'alphanum', 'custom_chars', 'regex',
+                       'date', 'future_date', 'time',
+                       'url', 'slug', 'email', 'phone', 'language']
 
 VALIDATOR_FUNC = {
     'alpha': is_valid_alpha,
@@ -31,11 +59,7 @@ VALIDATOR_FUNC = {
 
 
 def validate_input(input_msg: str,
-                   validation_type: Literal[
-                       'custom', 'required', 'not_in', 'none_if_blank', 'yes_no',
-                       'int', 'float', 'decimal', 'alpha', 'alphanum', 'custom_chars', 'regex',
-                       'date', 'future_date', 'time',
-                       'url', 'slug', 'email', 'phone', 'language'],
+                   validation_type: Union[str, BuiltinValidationType],
                    expected_inputs: list = None,
                    not_in: list = None,
                    maximum=None, minimum=None,
@@ -76,12 +100,25 @@ def validate_input(input_msg: str,
     :return: The user input if it is valid, or throw an appropriate error message and ask for user_input again
     """
     hints = []
+    vt = validation_type.strip().lower()
+    if vt not in VALIDATOR_FUNC:
+        raise ValueError(f"Unknown validation_type: '{vt}'. Did you forget to register it?")
 
-    if validation_type == 'yes_no' and '(y/n)' not in input_msg.lower():
+    # Validators that require extra parameters
+    if vt == "custom" and expected_inputs is None:
+        raise ValueError("validation_type='custom' requires expected_inputs")
+    if vt == "not_in" and not_in is None:
+        raise ValueError("validation_type='not_in' requires not_in")
+    if vt == "custom_chars" and allowed_chars is None:
+        raise ValueError("validation_type='custom_chars' requires allowed_chars")
+    if vt == "regex" and allowed_regex is None:
+        raise ValueError("validation_type='regex' requires allowed_regex")
+
+    if vt == 'yes_no' and '(y/n)' not in input_msg.lower():
         hints.append('(y/n):')
-    elif validation_type == 'none_if_blank' and '(optional)' not in input_msg.lower():
+    elif vt == 'none_if_blank' and '(optional)' not in input_msg.lower():
         hints.append('(optional):')
-    elif validation_type == 'time' and '(hh:mm:ss)' not in input_msg.lower():
+    elif vt == 'time' and '(hh:mm:ss)' not in input_msg.lower():
         hints.append('(hh:mm:ss):')
 
     if maximum is not None and 'max' not in input_msg.lower():
@@ -105,20 +142,20 @@ def validate_input(input_msg: str,
 
     # Otherwise try to validate
     try:
-        if validation_type.lower() in ['custom'] and expected_inputs is not None:
-            return VALIDATOR_FUNC[validation_type.lower()](user_input, expected_inputs)
-        elif validation_type.lower() in ['int', 'float', 'decimal'] and (expected_inputs or maximum or minimum):
-            return VALIDATOR_FUNC[validation_type.lower()](user_input, expected_inputs, maximum, minimum)
-        elif validation_type.lower() in ['not_in'] and not_in is not None:
+        if vt in ['custom'] and expected_inputs is not None:
+            return VALIDATOR_FUNC[vt](user_input, expected_inputs)
+        elif vt in ['int', 'float', 'decimal'] and (expected_inputs or maximum or minimum):
+            return VALIDATOR_FUNC[vt](user_input, expected_inputs, maximum, minimum)
+        elif vt in ['not_in'] and not_in is not None:
             return VALIDATOR_FUNC['not_in'](user_input, not_in)
-        elif validation_type.lower() in ['custom_chars'] and allowed_chars is not None:
-            return VALIDATOR_FUNC[validation_type.lower()](user_input, allowed_chars)
-        elif validation_type.lower() in ['regex'] and allowed_regex is not None:
-            return VALIDATOR_FUNC[validation_type.lower()](user_input, allowed_regex)
+        elif vt in ['custom_chars'] and allowed_chars is not None:
+            return VALIDATOR_FUNC[vt](user_input, allowed_chars)
+        elif vt in ['regex'] and allowed_regex is not None:
+            return VALIDATOR_FUNC[vt](user_input, allowed_regex)
         else:
             user_input = user_input.strip()
-            return VALIDATOR_FUNC[validation_type.lower()](user_input)
-    except ValueError:
+            return VALIDATOR_FUNC[vt](user_input)
+    except (ValueError, TypeError):
         print()
         return validate_input(
             input_msg=input_msg,
@@ -470,3 +507,19 @@ def choose_dict_from_list_of_dicts(list_of_dicts: list[dict], key_to_choose: str
 
 def yes(input_msg, default=None):
     return validate_input(input_msg, "yes_no", default=default) == 'y'
+
+
+__all__ = [
+    "BuiltinValidationType",
+    "VALIDATOR_FUNC",
+    "validate_input",
+    "pretty_menu",
+    "validate_user_option",
+    "validate_user_option_value",
+    "validate_user_option_enumerated",
+    "validate_user_option_multi",
+    "validate_user_option_value_multi",
+    "choose_from_db",
+    "choose_dict_from_list_of_dicts",
+    "yes",
+]

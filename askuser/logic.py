@@ -8,8 +8,8 @@ from string_list import list_from_string, string_from_list, str_enumerate
 
 
 def is_valid_custom(user_input: str, expected_inputs: list) -> str:
-    if user_input.lower() in expected_inputs:
-        return user_input.lower()
+    if user_input in expected_inputs:
+        return user_input
     else:
         print_error(f"Error: expected {expected_inputs}")
         raise ValueError(f"{user_input} is not in {expected_inputs}")
@@ -25,6 +25,7 @@ def is_not_in(user_input: str, not_in: list) -> str:
 
 
 def is_yes_no(user_input: str) -> str:
+    user_input = user_input.strip().lower()
     return is_valid_custom(user_input, ['y', 'n'])
 
 
@@ -363,3 +364,29 @@ def check_country_abbrev(country):
         return 'Czech Republic'
     else:
         return country
+
+
+__all__ = [
+    "is_valid_custom",
+    "is_not_in",
+    "is_yes_no",
+    "none_if_blank",
+    "is_not_blank",
+    "is_valid_int",
+    "is_valid_float",
+    "is_valid_decimal",
+    "is_valid_alpha",
+    "is_valid_alphanum",
+    "is_valid_regex",
+    "is_valid_char",
+    "get_language_ISO_639_1",
+    "is_valid_language",
+    "is_valid_date",
+    "is_valid_date_future",
+    "is_valid_time",
+    "is_url",
+    "is_valid_email",
+    "is_valid_phone",
+    "is_valid_slug",
+    "check_country_abbrev",
+]
