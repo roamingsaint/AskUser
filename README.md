@@ -1,6 +1,22 @@
 # AskUser
 
-**AskUser** is a smart CLI utility for collecting and validating user input in Python. It wraps common prompt patterns—validation, menus, defaults, and autocompletion—into a simple, consistent API.
+**AskUser** is a smart CLI utility for collecting and validating user input in Python. It wraps common prompt patterns—validation, menus, defaults, multi-selects, and autocompletion—into a simple, consistent API.
+
+---
+
+## 📑 Table of Contents
+
+- [Installation](#-installation)
+- [API Overview](#-api-overview)
+- [`validate_input`](#-validate_input)
+- [Menus & Options](#-menus--options)
+- [Database-Style Selection](#-database-style-selection)
+- [Yes/No Shortcut](#-yesno-shortcut)
+- [Autocomplete](#-autocomplete)
+- [Validation Types](#-validation-types)
+- [Custom Validators (Extension API)](#-custom-validators-extension-api)
+- [Testing](#-testing)
+- [License](#-license)
 
 ---
 
@@ -14,22 +30,20 @@ pip install askuser
 
 ## 📖 API Overview
 
-| Function / Class                                 | What It Does                                                                                                                         |
-|--------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
-| `validate_input(...)`                            | Prompt for free-form input, validate type/pattern, show hints (min/max/default) and retry until valid                                |
-| `pretty_menu(*args, **kwargs)`                   | Print a formatted menu of positional (`0:`) and keyword (`x:`) options                                                               |
-| `validate_user_option(...)`                      | Show a menu, auto-add `q: quit` (unless `q=False`), prompt user, and return the selected **key**                                     |
-| `validate_user_option_value(...)`                | Like `validate_user_option`, but maps the chosen **key** to its **value**                                                            |
-| `validate_user_option_enumerated(dict,...)`      | Enumerate a `dict` into numbered options, add `q: quit`, and return `(key, value)`                                                   |
-| `validate_user_option_multi(...)`                | **Multi-select** version of `validate_user_option`, returns **keys** in pick order; exit with `d: done` (or `xd`, `xd2`, ...)          |
-| `validate_user_option_value_multi(...)`          | **Multi-select** version of `validate_user_option_value`, returns **values** in pick order; exit with `d: done`                      |
-| `choose_from_db(list_of_dicts,...)`              | Tabulate DB rows, prompt for an **existing** `id`, optionally accept `xq: quit`, and return `(id, row_dict)`                         |
-| `choose_dict_from_list_of_dicts(list, field)`    | Display each item’s `field` as a menu, return the selected **dict**                                                                  |
-| `yes(prompt, default=None)`                      | Shorthand for `validate_input(prompt, "yes_no", default) == "y"` → returns **bool**                                                  |
-| `SubstringCompleter`                             | A `prompt_toolkit` completer that finds substring matches in suggestions                                                             |
-| `user_prompt(prompt, items, return_value=False)` | Prompt with autocomplete over a list/dict of `items`; if `return_value=True` (and `items` is a dict), returns the **value** instead. |
-
-> 🔎 **Key types:** When you pass options via `**kwargs`, selected **keys are returned in their original types** (e.g., `int` stays `int`). With positional `*args`, menu keys are enumerated strings: `'0'`, `'1'`, ...
+| Function / Class                                  | What It Does |
+|--------------------------------------------------|--------------|
+| `validate_input(...)`                            | Prompt for free-form input, validate type/pattern, retry until valid |
+| `pretty_menu(*args, **kwargs)`                   | Print a formatted menu |
+| `validate_user_option(...)`                      | Show a menu and return the selected **key** |
+| `validate_user_option_value(...)`                | Return the selected **value** |
+| `validate_user_option_enumerated(...)`           | Enumerate a dict and return `(key, value)` |
+| `validate_user_option_multi(...)`                | Multi-select menu (returns keys) |
+| `validate_user_option_value_multi(...)`          | Multi-select menu (returns values) |
+| `choose_from_db(...)`                            | Select an existing DB id from tabulated rows |
+| `choose_dict_from_list_of_dicts(...)`            | Select and return a dict |
+| `yes(...)`                                       | Yes/No shortcut |
+| `user_prompt(...)`                               | Prompt with autocomplete |
+| `SubstringCompleter`                             | Substring-based completer (advanced use) |
 
 ---
 
@@ -38,25 +52,31 @@ pip install askuser
 ```python
 validate_input(
     input_msg: str,
-    validation_type: str,
+    validation_type: str | Literal[
+      'custom','required','not_in','none_if_blank','yes_no',
+      'int','float','decimal','alpha','alphanum','custom_chars','regex',
+      'date','future_date','time','url','slug','email','phone','language'
+    ],
     expected_inputs: list = None,
     not_in:        list = None,
     maximum:       int | float = None,
     minimum:       int | float = None,
     allowed_chars: str = None,
     allowed_regex: str = None,
-    default:       object = None
-) -> object
+    default:       Any = None
+) -> Union[str,int,float,None]
 ```
 
-- **Default values**
-  - If you set `default`, pressing Enter returns the default.
-- **Hints added automatically**
-  - `yes_no` adds ` (y/n)`
-  - `none_if_blank` adds ` (optional)`
-  - `time` adds ` (hh:mm:ss)`
-  - `maximum`/`minimum` display `(max: ...)` / `(min: ...)`
-  - `default` displays `(default: ...)`
+### Behavior
+
+- **Defaults**  
+  - If `default` is set, pressing Enter returns the default.
+- **Automatic hints**  
+  - `yes_no` → `(y/n)`
+  - `none_if_blank` → `(optional)`
+  - `time` → `(hh:mm:ss)`
+  - `maximum` / `minimum` → `(max: …)` / `(min: …)`
+  - `default` → `(default: …)`
 - **Validation types**
   - **Built-in:** `int`, `float`, `decimal`, `alpha`, `alphanum`, `date`, `future_date`, `time`, `url`, `email`, `phone`, `slug`, `language`.
   - **List/pattern helpers:**
@@ -64,47 +84,20 @@ validate_input(
     - `not_in` with `not_in=[...]`
     - `custom_chars` with `allowed_chars="abc123"`
     - `regex` with `allowed_regex="^[A-Z]+$"`
+- **Errors**  
+  - Invalid input raises internally and the user is re-prompted.
 
-**Example:**
+### Example
 
 ```python
-# integer with bounds & default
 count = validate_input(
-    "How many items?", "int",
-    minimum=1, maximum=100,
+    "How many items?",
+    "int",
+    minimum=1,
+    maximum=100,
     default=10
 )
-# • Blank → count == 10
-# • Invalid/out-of-range → re-prompt
 ```
-
----
-
-## 🧠 Case sensitivity: what happens with `custom` vs `yes_no`?
-
-AskUser intentionally mixes both behaviors:
-
-- `custom` is **case-sensitive** (exact match)
-- `yes_no` is **case-insensitive** (accepts `Y`, `y`, `N`, `n`)
-
-**Example (case-sensitive `custom`):**
-
-```python
-# expected_inputs contains lowercase 'y'
-v = validate_input("Pick:", "custom", expected_inputs=["y", "n"])
-```
-
-- user enters `y` → ✅ accepted
-- user enters `Y` → ❌ rejected (reprompt), because `"Y" != "y"`
-
-**Example (case-insensitive `yes_no`):**
-
-```python
-ok = yes("Continue?")   # uses validation_type="yes_no" internally
-```
-
-- user enters `Y` → ✅ accepted (normalized to lowercase, returns True)
-- user enters `N` → ✅ accepted (returns False)
 
 ---
 
@@ -112,14 +105,18 @@ ok = yes("Continue?")   # uses validation_type="yes_no" internally
 
 ### `pretty_menu(*args, **kwargs)`
 
-Prints a menu—no prompt:
+Prints a menu without prompting:
 
 ```python
 pretty_menu("List", "Add", d="Delete", q="Quit")
-# 0: List    1: Add    d: Delete    q: Quit
 ```
 
-> Menu keys are **case-sensitive** (what you see is what you type).
+Output:
+```
+0: List    1: Add    d: Delete    q: Quit
+```
+
+> **Keys are case-sensitive.** What you see is what you type.
 
 ---
 
@@ -130,13 +127,13 @@ validate_user_option(
     input_msg: str = "Option:",
     *args,
     **kwargs  # pass q=False to suppress quit
-) -> object  # key (kwargs preserves original key types; args return '0','1',...)
+) -> Any
 ```
 
-- **Auto-adds** `q: quit` unless `q=False`.
-- Returns the chosen **key** (preserving original type for `**kwargs`).
-
-**Examples:**
+- **Auto-adds** `q: quit` unless `q=False`
+- Returns the selected **key**
+- For `**kwargs`
+- For `*args`, keys are enumerated strings (`"0"`, `"1"`, …)
 
 ```python
 opt = validate_user_option("Pick:", "Red", "Blue", g="Green")
@@ -150,14 +147,6 @@ opt = validate_user_option("Pick:", "One", "Two", q=False)
 
 ### `validate_user_option_value(...)`
 
-```python
-validate_user_option_value(
-    input_msg: str = "Option:",
-    *args,
-    **kwargs  # key -> value
-) -> object
-```
-
 - Builds same menu, returns the **value**.
 - **No `q` by default** (legacy behavior).
 
@@ -170,18 +159,10 @@ genre = validate_user_option_value(a="Action", c="Comedy", d="Drama")
 
 ### `validate_user_option_multi(...)`
 
-```python
-validate_user_option_multi(
-    input_msg: str = "Option:",
-    *args,
-    **kwargs  # key -> label
-) -> list
-```
-
 - **Multi-select** version of `validate_user_option`.
 - Exit with **`d: done`** by default. If `d` is already used in your options, exit appears as **`xd`**, or **`xd2`**, **`xd3`**, ...
 - Pass **`d=False`** to disable exit and force “pick until exhausted.”
-- Returns a list of **keys** in the order picked (kwargs preserve original key types).
+- Returns a list of **keys** in the order picked.
 
 ```python
 STATUS = {0: "new", 1: "active", 7: "rejected"}
@@ -189,24 +170,22 @@ picked = validate_user_option_multi("Select statuses:", **STATUS)
 # → [1, 7]
 ```
 
+- Exit with `d: done` (or `xd`, `xd2`, … if `d` is taken)
+- Pass `d=False` to force selection until exhausted
+
 ---
 
 ### `validate_user_option_value_multi(...)`
 
-```python
-validate_user_option_value_multi(
-    input_msg: str = "Option:",
-    *args,
-    **kwargs  # key -> value
-) -> list
-```
-
 - **Multi-select** version of `validate_user_option_value`.
-- Exit with **`d: done`** (or `xd`, `xd2`, ... if `d` is taken). Use **`d=False`** to disable exit.
-- Returns a list of **values** in the order picked.
 
 ```python
-vals = validate_user_option_value_multi("Pick genres", a="Action", c="Comedy", d="Drama")
+vals = validate_user_option_value_multi(
+    "Pick genres",
+    a="Action",
+    c="Comedy",
+    d="Drama"
+)
 # user picks: c, a → ['Comedy', 'Action']
 ```
 
@@ -230,6 +209,10 @@ validate_user_option_enumerated(
 movies = {101: "Inception", 202: "Memento"}
 mid, title = validate_user_option_enumerated(movies, start=1)
 ```
+
+- Enumerates dict items
+- Adds `q: quit`
+- Returns `(key, value)` or `('q', None)`
 
 ---
 
@@ -266,7 +249,10 @@ choose_dict_from_list_of_dicts(
 - Returns selected dict.
 
 ```python
-fruits = [{"name": "Apple", "color": "red"}, {"name": "Banana", "color": "yellow"}]
+fruits = [
+    {"name": "Apple", "color": "red"},
+    {"name": "Banana", "color": "yellow"},
+]
 choice = choose_dict_from_list_of_dicts(fruits, "name")
 ```
 
@@ -282,28 +268,59 @@ yes("Continue?", default="y")  # True if 'y', False if 'n'; blank → default
 
 ## 💬 Autocomplete
 
-Top-level import (recommended):
-
 ```python
-from askuser import user_prompt
+from askuser.autocomplete import user_prompt
 
-res = user_prompt("Country: ", ["USA", "UK", "IN"], return_value=False)
-# ≥2 chars → suggestions
-
-opts = {"us": "United States", "uk": "United Kingdom"}
-code = user_prompt("Code: ", opts, return_value=True)
-# returns 'us'
+country = user_prompt("Country: ", ["USA", "UK", "IN"])
+# typing ≥2 chars will start showing suggestions from list
 ```
 
-If you want to build your own prompt_toolkit session, you can also import:
-
+With dicts:
+- return_value=True returns the value (defaults to False, returning the key)
 ```python
-from askuser import SubstringCompleter
+opts = {"usa": "United States", "uk": "United Kingdom"}
+val = user_prompt("Code: ", opts, return_value=True)
+print(val)
+# Code: usa
+# United States
+
 ```
 
 ---
 
-## 🧩 Extending AskUser with custom validators
+## 🔎 Validation Types
+
+This table reflects **actual runtime behavior**, including case handling.
+
+| Type            | Description |
+|-----------------|-------------|
+| `required`      | Must not be blank |
+| `none_if_blank` | Blank input returns `None` |
+| `yes_no`        | Accepts `y` / `n` (case-insensitive, normalized to lowercase) |
+| `int`           | Integer with optional `minimum` / `maximum` |
+| `float`         | Float with optional `minimum` / `maximum` |
+| `decimal`       | `Decimal` with optional bounds |
+| `alpha`         | Alphabetic characters only |
+| `alphanum`      | Alphanumeric characters only |
+| `date`          | `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS` |
+| `future_date`   | Date must be today or in the future |
+| `time`          | `HH:MM:SS` |
+| `email`         | RFC-compliant email |
+| `phone`         | Digits with optional `+` (spaces/dashes stripped) |
+| `url`           | Hostname with optional path/query |
+| `slug`          | Lowercased `[a-z0-9-]`, deduplicated delimiter |
+| `language`      | ISO-639 via `pycountry` |
+| `custom`        | Exact match against `expected_inputs` (**case-sensitive**) |
+| `not_in`        | Reject values in `not_in` (**case-insensitive comparison**) |
+| `custom_chars`  | Only characters in `allowed_chars` |
+| `regex`         | Must match provided regex |
+
+> **Design note:** Case-sensitivity is intentional.  
+> If you want case-insensitive behavior for `custom`, normalize input yourself or register a custom validator.
+
+---
+
+## 🧩 Custom Validators (Extension API)
 
 AskUser supports registering additional validators at runtime without mutating internal globals directly.
 
@@ -312,40 +329,21 @@ from askuser import register_validator, validate_input
 
 def is_even(user_input: str) -> int:
     n = int(user_input)
-    if n % 2 != 0:
+    if n % 2:
         raise ValueError("Must be even")
     return n
 
-register_validator("even_int", is_even)
-x = validate_input("Enter even:", "even_int")
+register_validator("even", is_even)
+
+x = validate_input("Enter even number:", "even")
 ```
 
-Helpers:
+Helpers available:
 
 - `get_validators()`
 - `register_validator(name, func, overwrite=False)`
 - `register_validators({name: func, ...}, overwrite=False)`
 - `unregister_validator(name)`
-
----
-
-## 🔍 All Validation Types
-
-| Type                        | Description                                       |
-|-----------------------------|---------------------------------------------------|
-| `int` / `float` / `decimal` | Numeric with optional `minimum` / `maximum`       |
-| `alpha` / `alphanum`        | Only letters / letters+digits                     |
-| `date` / `future_date`      | `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS`             |
-| `time`                      | `HH:MM:SS`                                        |
-| `email`                     | Standard RFC email                                |
-| `phone`                     | Digits with optional `+`, strips spaces/dashes    |
-| `url`                       | Hostname + optional path/query                    |
-| `slug`                      | `[a-z0-9-]` only, single delimiter                |
-| `custom`                    | Only values in `expected_inputs` (case-sensitive) |
-| `not_in`                    | Reject values in `not_in` (case-insensitive)      |
-| `custom_chars`              | Only chars in `allowed_chars`                     |
-| `regex`                     | Match your regex                                  |
-| `language`                  | ISO-639 via `pycountry`                           |
 
 ---
 

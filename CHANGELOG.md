@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.0] - 2025-12-23
+### Added
+- Official custom validator extension API:
+  - `register_validator`
+  - `register_validators`
+  - `get_validators`
+  - `unregister_validator`
+- Explicit public exports in `__init__.py`
+- Documented case-sensitivity rules for validators
+- Table of contents in README
+
+### Changed
+- Clarified and documented validator behavior (no runtime behavior changes)
+
 ## [0.1.5] - 2025-11-20
 ### Added
 - is_valid_decimal()
