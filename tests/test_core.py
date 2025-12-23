@@ -54,6 +54,11 @@ def test_yes_function(monkeypatch):
     assert yes('Continue?') is False
 
 
+def test_yes_uppercase(monkeypatch):
+    setup_input(monkeypatch, ['Y'])
+    assert yes("Continue?") is True
+
+
 def test_validate_user_option(monkeypatch):
     setup_input(monkeypatch, ['0'])
     # q is auto-added
@@ -168,3 +173,22 @@ def test_multi_exit_collision_with_d_and_xd(monkeypatch):
     setup_input(monkeypatch, ['a', 'xd2'])
     keys = validate_user_option_multi("Pick", d="DELETE", xd="EXTRA", a="Alpha")
     assert keys == ['a']
+
+
+def test_validate_user_option_preserves_string_key(monkeypatch):
+    setup_input(monkeypatch, ['2'])
+    key = validate_user_option("Pick:", **{"2": "Two", "10": "Ten"})
+    assert key == "2"
+
+
+def test_substring_completer_basic():
+    # You made this public; sanity-check it does what it says.
+    from askuser.autocomplete import SubstringCompleter
+
+    class DummyDoc:
+        def __init__(self, text):
+            self.text_before_cursor = text
+
+    c = SubstringCompleter(["Alpha", "Beta", "Gamma"], min_chars=2)
+    out = list(c.get_completions(DummyDoc("al"), None))
+    assert any(x.text == "Alpha" for x in out)
