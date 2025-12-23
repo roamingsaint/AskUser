@@ -1,4 +1,7 @@
 # Changelog
+## [0.2.1] - 2025-12-23
+### Changed
+- validate_user_option will respect q=False and ignore it correctly
 
 ## [0.2.0] - 2025-12-23
 ### Added

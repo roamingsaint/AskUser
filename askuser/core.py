@@ -27,12 +27,11 @@ from .logic import (
     is_yes_no,
 )
 
-
 BuiltinValidationType = Literal[
-                       'custom', 'required', 'not_in', 'none_if_blank', 'yes_no',
-                       'int', 'float', 'decimal', 'alpha', 'alphanum', 'custom_chars', 'regex',
-                       'date', 'future_date', 'time',
-                       'url', 'slug', 'email', 'phone', 'language']
+    'custom', 'required', 'not_in', 'none_if_blank', 'yes_no',
+    'int', 'float', 'decimal', 'alpha', 'alphanum', 'custom_chars', 'regex',
+    'date', 'future_date', 'time',
+    'url', 'slug', 'email', 'phone', 'language']
 
 VALIDATOR_FUNC = {
     'alpha': is_valid_alpha,
@@ -241,7 +240,7 @@ def validate_user_option(input_msg: str = 'Option:', *args: Any, **kwargs: Any) 
     for k, v in kwargs.items():
         # Keep menu key as string for display / validation, but remember the original key
         menu_key = str(k)
-        ops_dict[menu_key] = str(v)
+        ops_dict[menu_key] = str(v) if v is not False else False
         orig_key_by_menu_key[menu_key] = k
 
     # Handle q option like before
