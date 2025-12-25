@@ -39,7 +39,6 @@ from .logic import (
     is_valid_email,
     is_valid_phone,
     is_valid_slug,
-    check_country_abbrev,
 )
 
 # autocomplete.py
@@ -87,7 +86,6 @@ __all__ = [
     "is_valid_email",
     "is_valid_phone",
     "is_valid_slug",
-    "check_country_abbrev",
     # autocomplete
     "user_prompt",
     "SubstringCompleter",

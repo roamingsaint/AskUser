@@ -1,6 +1,5 @@
-import pytest
 from askuser.core import (
-    validate_input, pretty_menu, validate_user_option,
+    validate_input, validate_user_option,
     validate_user_option_value, validate_user_option_enumerated,
     choose_from_db, choose_dict_from_list_of_dicts, yes,
     validate_user_option_multi, validate_user_option_value_multi,

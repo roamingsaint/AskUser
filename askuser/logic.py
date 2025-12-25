@@ -350,22 +350,6 @@ def is_valid_slug(user_input: str, delimiter='-') -> str:
     return slug
 
 
-def check_country_abbrev(country):
-    # Handle initials for countries
-    if country.lower() in ['america', 'us', 'u.s.', 'u.s', 'usa', 'u.s.a.', 'u.s.a', 'united states of america']:
-        return 'United States'
-    elif country.lower() in ['great britain', 'britain', 'uk', 'u.k.', 'u.k', 'great britain']:
-        return 'United Kingdom'
-    elif country.lower() in ['emirates', 'uae', 'u.a.e', 'u.a.e.']:
-        return 'United Arab Emirates'
-    elif country.lower() in ['belgië', 'belgie']:
-        return 'Belgium'
-    elif country.lower() in ['czechia']:
-        return 'Czech Republic'
-    else:
-        return country
-
-
 __all__ = [
     "is_valid_custom",
     "is_not_in",
@@ -388,5 +372,4 @@ __all__ = [
     "is_valid_email",
     "is_valid_phone",
     "is_valid_slug",
-    "check_country_abbrev",
 ]

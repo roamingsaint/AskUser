@@ -6,7 +6,7 @@ from askuser.logic import (
     is_valid_int, is_valid_float, is_valid_alpha, is_valid_alphanum,
     is_valid_regex, is_valid_char, is_valid_custom, is_not_in,
     is_yes_no, none_if_blank, is_not_blank,
-    is_valid_slug, check_country_abbrev,
+    is_valid_slug,
     is_valid_decimal,
 )
 
@@ -106,8 +106,3 @@ def test_is_not_blank():
 def test_is_valid_slug():
     assert is_valid_slug('Hello-World!!') == 'hello-world'
     assert is_valid_slug('--Test__Slug--') == 'testslug'
-
-
-def test_check_country_abbrev():
-    assert check_country_abbrev('us') == 'United States'
-    assert check_country_abbrev('Canada') == 'Canada'
