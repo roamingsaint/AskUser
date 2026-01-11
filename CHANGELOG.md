@@ -1,4 +1,8 @@
 # Changelog
+## [0.2.3] - 2026-01-11
+### Added
+- `optional` validator alias (identical behavior to `none_if_blank
+
 ## [0.2.1] - 2025-12-23
 ### Changed
 - validate_user_option will respect q=False and ignore it correctly

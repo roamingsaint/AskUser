@@ -32,6 +32,9 @@ def is_yes_no(user_input: str) -> str:
 def none_if_blank(user_input: str):
     return None if len(user_input) == 0 else user_input
 
+# Alias: allow 'optional' to be used interchangeably with 'none_if_blank'
+optional = none_if_blank
+
 
 def is_not_blank(user_input: str, expected_inputs: List[str] = None) -> str:
     if len(user_input) == 0:

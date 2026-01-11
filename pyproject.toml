@@ -1,6 +1,6 @@
 [project]
 name = "askuser"
-version = "0.2.2"
+version = "0.2.3"
 description = "Smart and robust CLI input: validated prompts, menu-driven selections, default value support, and smart autocompletion."
 readme = "README.md"
 license = {text = "MIT"}
@@ -14,7 +14,11 @@ dependencies = [
     "tabulate~=0.9",
     "email-validator~=2.2.0"
 ]
+
 requires-python = ">=3.7"
+
+[project.optional-dependencies]
+tests = ["pytest"]
 
 [build-system]
 requires = ["setuptools", "wheel"]

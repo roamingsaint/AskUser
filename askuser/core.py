@@ -28,7 +28,7 @@ from .logic import (
 )
 
 BuiltinValidationType = Literal[
-    'custom', 'required', 'not_in', 'none_if_blank', 'yes_no',
+    'custom', 'required', 'not_in', 'none_if_blank', 'optional', 'yes_no',
     'int', 'float', 'decimal', 'alpha', 'alphanum', 'custom_chars', 'regex',
     'date', 'future_date', 'time',
     'url', 'slug', 'email', 'phone', 'language']
@@ -46,6 +46,7 @@ VALIDATOR_FUNC = {
     'int': is_valid_int,
     'language': is_valid_language,
     'none_if_blank': none_if_blank,
+    'optional': none_if_blank,
     'not_in': is_not_in,
     'phone': is_valid_phone,
     'regex': is_valid_regex,
@@ -115,7 +116,7 @@ def validate_input(input_msg: str,
 
     if vt == 'yes_no' and '(y/n)' not in input_msg.lower():
         hints.append('(y/n):')
-    elif vt == 'none_if_blank' and '(optional)' not in input_msg.lower():
+    elif vt in ('none_if_blank', 'optional') and '(optional)' not in input_msg.lower():
         hints.append('(optional):')
     elif vt == 'time' and '(hh:mm:ss)' not in input_msg.lower():
         hints.append('(hh:mm:ss):')
