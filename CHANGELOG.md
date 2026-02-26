@@ -1,7 +1,7 @@
 # Changelog
-## [0.2.4] - 2026-02-26
-### Added
-- support for print_custom in validate_input family
+## [0.2.5] - 2026-02-26
+### Reverted 0.2.4
+- can not support for print_custom in validate_input family inputs
 
 ## [0.2.3] - 2026-01-11
 ### Added

@@ -1,12 +1,12 @@
 [project]
 name = "askuser"
-version = "0.2.4"
+version = "0.2.5"
 description = "Smart and robust CLI input: validated prompts, menu-driven selections, default value support, and smart autocompletion."
 readme = "README.md"
 license = {text = "MIT"}
 authors = [{name = "Kanad Rishiraj (RoamingSaint)", email = "roamingsaint27@gmail.com"}]
 dependencies = [
-    "colorfulPyPrint~=0.1",
+    "colorfulPyPrint~=0.2",
     "datetimeops~=1.0",
     "prompt_toolkit~=3.0",
     "pycountry~=24.6",
