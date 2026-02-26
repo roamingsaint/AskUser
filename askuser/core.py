@@ -1,6 +1,6 @@
 from typing import Any, Dict, Union, Hashable, Literal
 
-from colorfulPyPrint.py_color import print_blue, input_custom
+from colorfulPyPrint.py_color import print_blue, input_custom, print_custom
 from string_list import str_enumerate
 from tabulate import tabulate
 
@@ -198,13 +198,13 @@ def pretty_menu(*args, **kwargs):
     for i, op in ops_dict.items():
         if len(ops_dict) > 5:
             print_blue(i.rjust(longest_option), end="")
-            print(f": {op}".ljust(longest_desc + 5), end="")
+            print_custom(f": {op}".ljust(longest_desc + 5), end="")
             count += 1
             if count % 3 == 0:
                 print()
         else:
             print_blue(i, end="")
-            print(f": {op}")
+            print_custom(f": {op}")
     if count % 3 != 0:  # Add a line for the input_msg (else it will print in same line)
         print()
 
@@ -262,13 +262,13 @@ def validate_user_option(input_msg: str = 'Option:', *args: Any, **kwargs: Any) 
             max_item_len = longest_desc + len(': ') + longest_option + 5
             items_per_col = max(1, int(120 / max_item_len))
             print_blue(i.rjust(longest_option), end="")
-            print(f": {op}".ljust(longest_desc + 5 - len(i) + 1), end="")
+            print_custom(f": {op}".ljust(longest_desc + 5 - len(i) + 1), end="")
             count += 1
             if count % items_per_col == 0:
                 print()
         else:
             print_blue(i, end="")
-            print(f": {op}")
+            print_custom(f": {op}")
     if count % items_per_col != 0:
         print()
 

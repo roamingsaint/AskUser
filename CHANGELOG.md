@@ -1,4 +1,8 @@
 # Changelog
+## [0.2.4] - 2026-02-26
+### Added
+- support for print_custom in validate_input family
+
 ## [0.2.3] - 2026-01-11
 ### Added
 - `optional` validator alias (identical behavior to `none_if_blank
